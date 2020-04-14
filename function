@@ -1,0 +1,267 @@
+/**
+ * 处理接口返回的数据结构
+ * @param {Array} dataList
+ * @param {Boolean} isShowLabel
+ */
+export const handleChartData = (dataList, isShowLabel = false) => {
+  if (!Array.isArray(dataList)) {
+    return [];
+  }
+  const dataProcessByNumber = dataList.map((item) => {
+    const { name, value } = item;
+    const valueForNumber = Number.parseFloat(value);
+    if (Number.isNaN(valueForNumber) || valueForNumber === 0) {
+      // 数据为零时，不显示文本和数据连线
+      return {
+        name,
+        value: 0,
+        label: {
+          show: false,
+        },
+        labelLine: {
+          show: false,
+        },
+      };
+    }
+    return {
+      name,
+      value: valueForNumber,
+      label: {
+        show: isShowLabel,
+      },
+      labelLine: {
+        show: isShowLabel,
+      },
+    };
+  });
+  if (dataProcessByNumber.every((item) => item.value === 0)) {
+    return [];
+  }
+  dataProcessByNumber.sort((a, b) => b.value - a.value);
+  return dataProcessByNumber;
+};
+
+/**
+ * 获取距离 2019年10月 至上个月的所有月份
+ */
+export function getMonthsListFor201910() {
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth();
+  const list = [];
+  let startYear = 2019;
+  let startMonth = 9;
+  while (new Date(startYear, startMonth, 1, 0, 0) < new Date(currentYear, currentMonth, 1, 0, 0)) {
+    list.push({
+      key: `${startYear}${String(startMonth + 1).padStart(2, '0')}`,
+      title: `${startYear}年${String(startMonth + 1).padStart(2, '0')}月`,
+      isSelected: false,
+    });
+
+    startMonth += 1;
+    startYear += Math.floor(startMonth / 12);
+    startMonth %= 12;
+  }
+  list.reverse();
+  list[0].isSelected = true;
+  return list;
+}
+/**
+ * 获取当前月份天数
+ */
+export function mGetDate(year, month) {
+  const d = new Date(year, month, 0);
+  return d.getDate();
+}
+
+/**
+ * 获取当前年份
+ */
+export function getCurrentYear() {
+  return new Date().getFullYear();
+}
+
+/**
+ * 获取当前月份
+ */
+export function getCurrentMonth() {
+  return new Date().getMonth() + 1;
+}
+
+/**
+ * 获取当前年月份
+ */
+export function getCurrentYearMonth() {
+  return `${getCurrentYear()}${String(getCurrentMonth()).padStart(2, '0')}`;
+}
+
+/**
+ * 获取距离 2019年 至今所有的年份
+ */
+export function getYearsListFor2019() {
+  const currentYear = getCurrentYear();
+  const yearsList = [];
+  let startYear = 2019;
+  while (startYear <= currentYear) {
+    yearsList.push({
+      key: `${startYear}`,
+      title: `${startYear}年`,
+    });
+
+    startYear += 1;
+  }
+  return yearsList;
+}
+
+/**
+ * 获取距离 2019年10月 至今的所有月份（上月/本月）
+ */
+export function getMonthsListFormat() {
+  const currentDate = new Date();
+  const list = [];
+  let startYear = 2019;
+  let startMonth = 9;
+  while (new Date(startYear, startMonth, 0, 0, 0) < currentDate) {
+    list.push({
+      key: `${startYear}${String(startMonth + 1).padStart(2, '0')}`,
+      title: `${startYear}年${String(startMonth + 1).padStart(2, '0')}月`,
+    });
+
+    startMonth += 1;
+    startYear += Math.floor(startMonth / 12);
+    startMonth %= 12;
+  }
+  list.reverse();
+  list[0].title = '本月';
+  list[1].title = '上月';
+  list.reverse();
+  return list;
+}
+
+/**
+ * 获取前x天的日期
+ */
+export function getDate(x) {
+  const currentDate = new Date();
+  const newDate = new Date(currentDate);
+  newDate.setDate(currentDate.getDate() + x);
+
+  const key = `${newDate.getFullYear()}${String(newDate.getMonth() + 1).padStart(2, '0')}${String(newDate.getDate()).padStart(2, '0')}`;
+  const title = `${newDate.getMonth() + 1}月${newDate.getDate()}日`;
+  return { key, title };
+}
+
+/**
+ * 获取前x天的日期集合
+ */
+export function getFirstSevenDays(x = 7) {
+  const list = [];
+  let i = -1;
+  for (i; i >= -x; i -= 1) {
+    list.push(getDate(i));
+  }
+  return list.reverse();
+}
+
+/**
+ * 获取前x个月的月份集合
+ */
+export function getHalfYearList(x = 6) {
+  let currentYear = getCurrentYear();
+  let currentMonth = getCurrentMonth();
+  const harfYearList = [];
+
+  for (let i = 0; i < x; i += 1) {
+    currentMonth -= 1;
+    if (currentMonth <= 0) {
+      currentYear -= 1;
+      currentMonth += 12;
+    }
+    harfYearList.push({
+      key: `${currentYear}${String(currentMonth).padStart(2, '0')}`,
+      title: `${currentMonth}月`,
+    });
+  }
+  harfYearList[0].title = '上月';
+  harfYearList.reverse();
+  return harfYearList;
+}
+
+/** 处理接口返回的折线图和柱形图数据结构
+/* @param {ArrayObject} lineDataList 后台返回的数据
+*/
+export const lineDataInit = (lineDataList) => {
+  const valueList = [];
+  const nameList = [];
+  if (lineDataList.lenght === 0) {
+    return [];
+  }
+  lineDataList.forEach((key) => {
+    nameList.push(key.name);
+    valueList.push(key.value);
+  });
+  return [{ xAxisData: nameList, value: valueList }];
+};
+
+/** 处理折线图和柱形图图表数据中 value 和 xAxisData 为空的情况
+/* @param {ArrayObject} lineDataList 后台返回的数据
+*/
+export const handleLineData = (lineDataList) => {
+  const dataList = lineDataInit(lineDataList);
+  if (dataList.length === 0) {
+    return [];
+  }
+  dataList.map((item) => {
+    if (!Array.isArray(item.value)) {
+      return {
+        name: '',
+        value: [],
+        xAxisData: item.xAxisData,
+      };
+    }
+    if (!Array.isArray(item.xAxisData)) {
+      return {
+        name: '',
+        value: item.value,
+        xAxisData: [],
+      };
+    }
+    return {
+      name: '',
+      value: item.value,
+      xAxisData: item.xAxisData,
+    };
+  });
+};
+
+/** 获取折线图人数单位
+ * @param {ArrayObject} data 整合过的折线图数据
+ */
+export function getUnitForChart(data) {
+  const list = data[0].value || [];
+  if ((list.length) > 0) {
+    const isWan = list.filter((item) => (item > 10000)).length > 0;
+    return isWan;
+  }
+  return null;
+}
+
+/** 格式化折线图数据--超过一万的保留两位小数以万为单位
+ * @param {ArrayObject} data 整合过的折线图数据
+ */
+export function getFormatListForChart(data) {
+  const newData = data.map((item) => ({ ...item }));
+  if (getUnitForChart(data)) {
+    newData[0].value = newData[0].value.map((item) => (parseFloat((item / 10000).toFixed(2))));
+  }
+  return newData;
+}
+
+// 武力值圆环数据预处理
+export const handelPieValue = (value) => {
+  const valueForNumber = Number.parseFloat(value);
+  if (Number.isNaN(valueForNumber) || valueForNumber === 0) {
+    return 0;
+  }
+  return value;
+};
